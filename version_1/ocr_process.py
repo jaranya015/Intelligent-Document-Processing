@@ -3,8 +3,8 @@ import easyocr
 import cv2
 
 # 1. ตั้งค่า Path
-input_folder = '/Users/faiijaran/Desktop/project/output/photo_by_grayscale'
-output_txt_folder = '/Users/faiijaran/Desktop/project/output/extracted_text'
+input_folder = '/Users/faiijaran/Desktop/project/version_1/output/photo_by_grayscale'
+output_txt_folder = '/Users/faiijaran/Desktop/project/version_1/output/extracted_text'
 
 # สร้างโฟลเดอร์สำหรับเก็บไฟล์ Text
 if not os.path.exists(output_txt_folder):

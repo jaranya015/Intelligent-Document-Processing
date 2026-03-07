@@ -28,7 +28,7 @@ def preprocess_receipt(image_path):
 
     # 3. การกรองตัวอักษรดำ (Black Text Filtering)
     gray_cropped = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY)
-    blurred_final = cv2.GaussianBlur(gray_cropped, (5, 5), 0)
+    blurred_final = cv2.GaussianBlur(gray_cropped, (3, 3), 0)
     thresh_final = cv2.adaptiveThreshold(
         blurred_final, 255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -61,8 +61,8 @@ def preprocess_receipt(image_path):
     return final_img_clean
 
 # --- ส่วนของการตั้งค่า Path ---
-input_folder = '/Users/faiijaran/Desktop/project/photo_for_test/'
-output_folder = '/Users/faiijaran/Desktop/project/output/photo_by_grayscale/'
+input_folder = '/Users/faiijaran/Desktop/project/version_1/photo_for_test'
+output_folder = '/Users/faiijaran/Desktop/project/version_1/output/photo_by_grayscale'
 num_images = 16
 
 # สร้างโฟลเดอร์ output ถ้ายังไม่มี
