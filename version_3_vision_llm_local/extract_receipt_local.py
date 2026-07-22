@@ -28,11 +28,11 @@ import sys
 import ollama
 from PIL import Image
 
-MODEL = "qwen2.5vl"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
+MODEL = "llava-phi3"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
 # หมายเหตุ: moondream แม่นยำน้อยกว่าโมเดลใหญ่ โดยเฉพาะภาษาไทยและตัวเลขละเอียด
 # ถ้าเครื่องมี RAM มากกว่านี้ (16GB+) ค่อยลองสลับกลับไปเป็น "qwen2.5vl" เพื่อความแม่นยำที่ดีกว่า
 
-MAX_DIMENSION = 1568
+MAX_DIMENSION = 1024
 
 # ใช้ prompt เดียวกับเวอร์ชัน Claude เพื่อเทียบผลกันตรง ๆ ได้
 EXTRACTION_PROMPT = """คุณคือผู้เชี่ยวชาญด้านบัญชีไทย หน้าที่ของคุณคือดูรูปใบเสร็จ/ใบกำกับภาษี/ใบเสนอราคานี้
@@ -132,3 +132,7 @@ if __name__ == "__main__":
 
     result = extract_receipt_data(path)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+
+    
