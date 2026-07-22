@@ -13,9 +13,8 @@ batch_process.py
 import json
 import os
 import sys
+import time
 
-# ใช้เวอร์ชันฟรี (Ollama local) เป็นค่าเริ่มต้น
-# ถ้าจะสลับไปใช้ Claude ทีหลัง เปลี่ยนบรรทัดล่างเป็น: from extract_receipt import extract_receipt_data
 from extract_receipt_local import extract_receipt_data
 from excel_writer import append_receipt_to_excel
 
@@ -40,9 +39,11 @@ def main(input_folder: str):
     ok, failed = 0, 0
     for filename in files:
         img_path = os.path.join(input_folder, filename)
-        print(f"- กำลังอ่าน {filename} ...", end=" ")
+        print(f"- กำลังอ่าน {filename} ... (กำลังรอโมเดลตอบ อาจใช้เวลาสักครู่)", flush=True)
+        start = time.time()
         try:
             data = extract_receipt_data(img_path)
+            elapsed = time.time() - start
 
             # เก็บผลดิบไว้ดูย้อนหลังเป็นไฟล์ .json ต่อรูป
             json_path = os.path.join(out_dir, f"{os.path.splitext(filename)[0]}.json")
@@ -53,10 +54,11 @@ def main(input_folder: str):
 
             low_conf = data.get("low_confidence_fields") or []
             flag = f" (ไม่มั่นใจ: {', '.join(low_conf)})" if low_conf else ""
-            print(f"สำเร็จ{flag}")
+            print(f"  สำเร็จ ({elapsed:.1f} วิ){flag}", flush=True)
             ok += 1
         except Exception as e:
-            print(f"ล้มเหลว: {e}")
+            elapsed = time.time() - start
+            print(f"  ล้มเหลว ({elapsed:.1f} วิ): {e}", flush=True)
             failed += 1
 
     print(f"\nเสร็จสิ้น: สำเร็จ {ok} ไฟล์, ล้มเหลว {failed} ไฟล์")

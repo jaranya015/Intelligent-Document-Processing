@@ -4,9 +4,13 @@ extract_receipt_local.py
 เวอร์ชันฟรี — ใช้โมเดล vision ที่รันบนเครื่องตัวเองผ่าน Ollama แทน Claude API
 ไม่มีค่าใช้จ่ายเลย แต่ความแม่นยำ (โดยเฉพาะภาษาไทย/ตัวเลข) จะสู้ Claude ไม่ได้
 
-ก่อนใช้ต้องดึงโมเดลก่อน (เลือกอันใดอันหนึ่ง):
-    ollama pull llama3.2-vision      # ~8GB, ทั่วไปดี แต่ภาษาไทยไม่แข็ง
-    ollama pull qwen2.5vl            # มัลติลิงกวลดีกว่า ลองอันนี้ถ้า llama3.2-vision อ่านไทยไม่ออก
+ก่อนใช้ต้องดึงโมเดลก่อน:
+    ollama pull qwen2.5vl
+
+หมายเหตุ: ห้ามใช้ llama3.2-vision ตอนนี้ — Ollama engine เวอร์ชันใหม่ (0.30.0+)
+ยังไม่รองรับสถาปัตยกรรม 'mllama' ของโมเดลนี้ รันแล้วจะเจอ error
+"unknown model architecture: 'mllama'" เป็นบั๊กฝั่ง Ollama เอง ยังไม่มีกำหนดแก้
+ใช้ qwen2.5vl หรือ llava แทนไปก่อน
 
 วิธีใช้ (โครงสร้างและ interface เหมือน extract_receipt.py ทุกอย่าง
 สลับไฟล์ import เดียวก็พอ ส่วน batch_process.py / excel_writer.py ใช้ร่วมกันได้เลย):
@@ -24,7 +28,9 @@ import sys
 import ollama
 from PIL import Image
 
-MODEL = "llama3.2-vision"  # เปลี่ยนเป็น "qwen2.5vl" ได้ถ้า pull ไว้แล้วและอยากลองเทียบ
+MODEL = "qwen2.5vl"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
+# หมายเหตุ: moondream แม่นยำน้อยกว่าโมเดลใหญ่ โดยเฉพาะภาษาไทยและตัวเลขละเอียด
+# ถ้าเครื่องมี RAM มากกว่านี้ (16GB+) ค่อยลองสลับกลับไปเป็น "qwen2.5vl" เพื่อความแม่นยำที่ดีกว่า
 
 MAX_DIMENSION = 1568
 
@@ -88,6 +94,9 @@ def extract_receipt_data(image_path: str) -> dict:
                 }
             ],
             format="json",
+            options={
+                "num_ctx": 4096 
+            },
         )
         raw_text = response["message"]["content"].strip()
     finally:
