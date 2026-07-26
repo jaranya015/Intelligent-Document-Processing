@@ -74,7 +74,7 @@ def handle_message_event(event: MessageEvent):
         text = event.message.text.strip()
         
         # พิมพ์เมนู
-        if text.lower() in ["เมนู", "menu", "hi", "hello"]:
+        if text.lower() in ["เมนู", "menu", "hi", "hello","ทำรายการ","เอกสาร"]:
             flex_dict = create_menu_flex()
             flex_msg = FlexMessage(
                 alt_text=flex_dict["altText"],
