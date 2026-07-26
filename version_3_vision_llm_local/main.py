@@ -22,6 +22,8 @@ from version_3_vision_llm_local.excel_writer import append_receipt_to_excel
 from version_3_vision_llm_local.line_flex import create_receipt_flex, create_menu_flex
 from version_3_vision_llm_local.document_generator import generate_document_image
 
+from datetime import datetime
+
 app = FastAPI()
 
 # Middleware ข้ามหน้าเตือน ngrok
@@ -98,7 +100,8 @@ def handle_message_event(event: MessageEvent):
                 
                 # 3. สร้างรูปเอกสารจาก Template PNG
                 template_file = f"{current_mode}_template.jpg"
-                out_file = f"{user_id}_{current_mode}.jpg"
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                out_file = f"{current_mode}_{timestamp}_{user_id[:6]}.jpg"
                 
                 generate_document_image(current_mode, doc_data, template_file, out_file)
                 
