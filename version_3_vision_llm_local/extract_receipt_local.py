@@ -64,6 +64,26 @@ EXTRACTION_PROMPT = """คุณคือผู้เชี่ยวชาญด
 }
 """
 
+def extract_text_to_json(user_text: str) -> dict:
+    prompt = f"""คุณคือระบบช่วยออกเอกสารบัญชีภาษาไทย
+โปรดอ่านข้อความต่อไปนี้แล้วแปลงเป็น JSON:
+"{user_text}"
+
+โครงสร้าง JSON ที่ต้องการ:
+{{
+  "customer": "ชื่อลูกค้า หรือ ชื่อร้านค้า",
+  "item": "รายการสินค้าและจำนวน",
+  "amount": 0.0,
+  "credit_term": "จำนวนวันเครดิต (ถ้ามี ให้ใส่เป็นตัวเลข หรือ null)"
+}}
+ตอบเฉพาะ JSON ล้วนเท่านั้น
+"""
+    response = ollama.chat(
+        model="llava-phi3",
+        messages=[{"role": "user", "content": prompt}],
+        format="json"
+    )
+    return json.loads(response["message"]["content"].strip())
 
 def _resize_to_temp(image_path: str) -> str:
     """ย่อรูปถ้าใหญ่เกิน แล้วเซฟเป็นไฟล์ชั่วคราว (ollama.chat รับ path ของไฟล์บนดิสก์)"""

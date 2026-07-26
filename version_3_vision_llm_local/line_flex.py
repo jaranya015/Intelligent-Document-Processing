@@ -55,3 +55,47 @@ def create_receipt_flex(data: dict, temp_file_id: str) -> dict:
             }
         }
     }
+
+def create_menu_flex() -> dict:
+    return {
+        "type": "flex",
+        "altText": "เลือกบริการจัดการเอกสารบัญชี",
+        "contents": {
+            "type": "bubble",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "💼 บัญชี & เอกสารดิจิทัล", "weight": "bold", "size": "md", "color": "#1DB446"}
+                ]
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {"type": "text", "text": "กรุณาเลือกรายการที่ต้องการทำ:", "size": "sm", "color": "#666666", "margin": "xs"},
+                    {
+                        "type": "button", "style": "primary", "color": "#2A9D8F", "height": "sm",
+                        "action": {"type": "postback", "label": "🧾 บันทึกใบเสร็จ / บิลซื้อ", "data": "mode=receipt"}
+                    },
+                    {
+                        "type": "button", "style": "primary", "color": "#F4A261", "height": "sm",
+                        "action": {"type": "postback", "label": "📄 ออกใบเสนอราคา (Quotation)", "data": "mode=quotation"}
+                    },
+                    {
+                        "type": "button", "style": "primary", "color": "#E76F51", "height": "sm",
+                        "action": {"type": "postback", "label": "📜 ออกใบแจ้งหนี้ (Invoice)", "data": "mode=invoice"}
+                    },
+                    {
+                        "type": "button", "style": "primary", "color": "#457B9D", "height": "sm",
+                        "action": {"type": "postback", "label": "🛍️ ออกใบสั่งซื้อ (PO)", "data": "mode=po"}
+                    },
+                    {
+                        "type": "button", "style": "primary", "color": "#1D3557", "height": "sm",
+                        "action": {"type": "postback", "label": "🏷️ ใบกำกับภาษี / ใบเสร็จรับเงิน", "data": "mode=tax_invoice"}
+                    }
+                ]
+            }
+        }
+    }
