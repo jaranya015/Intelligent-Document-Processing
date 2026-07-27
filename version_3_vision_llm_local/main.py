@@ -1,3 +1,4 @@
+import json
 import uuid
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
@@ -74,7 +75,7 @@ def handle_message_event(event: MessageEvent):
         text = event.message.text.strip()
         
         # พิมพ์เมนู
-        if text.lower() in ["เมนู", "menu", "hi", "hello","ทำรายการ","เอกสาร"]:
+        if text.lower() in ["เมนู", "menu", "hi", "hello", "ทำรายการ", "เอกสาร"]:
             flex_dict = create_menu_flex()
             flex_msg = FlexMessage(
                 alt_text=flex_dict["altText"],
@@ -87,7 +88,8 @@ def handle_message_event(event: MessageEvent):
 
         # ตรวจสอบโหมดปัจจุบัน
         current_mode = USER_MODES.get(user_id, "receipt")
-        
+        print(f"DEBUG: User {user_id} พิมพ์เข้ามา ขณะอยู่ในโหมด -> {current_mode}") 
+
         if current_mode in ["invoice", "quotation", "po", "tax_invoice"]:
             send_push_text(user_id, "⏳ กำลังประมวลผลและสร้างรูปเอกสาร...")
             
@@ -98,7 +100,7 @@ def handle_message_event(event: MessageEvent):
                 # 2. บันทึกลง Excel
                 append_receipt_to_excel(doc_data, str(config.EXCEL_PATH), source_file=f"Generated_{current_mode}")
                 
-                # 3. สร้างรูปเอกสารจาก Template PNG
+                # 3. สร้างรูปเอกสารจาก Template
                 template_file = f"{current_mode}_template.jpg"
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 out_file = f"{current_mode}_{timestamp}_{user_id[:6]}.jpg"
@@ -113,7 +115,11 @@ def handle_message_event(event: MessageEvent):
                     messaging_api = MessagingApi(api_client)
                     messaging_api.push_message(PushMessageRequest(to=user_id, messages=[img_msg]))
             except Exception as e:
-                send_push_text(user_id, f"❌ เกิดข้อผิดพลาดในการสร้างเอกสาร: {str(e)}")
+                print(f"❌ ERROR: {e}") # ปริ้นต์ลง Terminal ด้วย
+                send_push_text(user_id, f"เกิดข้อผิดพลาดในการสร้างเอกสาร: {str(e)}")
+        else:
+            # 📌 เพิ่มฝั่ง else เพื่อให้บอทไม่เงียบเวลาโหมดหลุด
+            send_push_text(user_id, f"💡 ปัจจุบันคุณอยู่ในโหมด 'บันทึกใบเสร็จ' หากต้องการออกเอกสาร กรุณากดเลือกโหมดจาก 'ทำรายการ' อีกครั้งค่ะ")
 
     # CASE B: ผู้ใช้ส่งรูปภาพเข้ามา
     elif isinstance(event.message, ImageMessageContent):
@@ -121,7 +127,7 @@ def handle_message_event(event: MessageEvent):
         if current_mode == "receipt":
             handle_receipt_image(event, user_id)
         else:
-            send_push_text(user_id, "📌 โหมดนี้รองรับการพิมพ์ข้อความสั่งออกเอกสารครับ")
+            send_push_text(user_id, " โหมดนี้รองรับการพิมพ์ข้อความสั่งออกเอกสารค่ะ")
 
 def handle_receipt_image(event: MessageEvent, user_id: str):
     message_id = event.message.id
@@ -134,7 +140,7 @@ def handle_receipt_image(event: MessageEvent, user_id: str):
         with open(temp_img_path, "wb") as f:
             f.write(content)
 
-    send_push_text(user_id, "⏳ กำลังอ่านข้อมูลใบเสร็จ กรุณารอสักครู่...")
+    send_push_text(user_id, " กำลังอ่านข้อมูลใบเสร็จ กรุณารอสักครู่...")
 
     try:
         data = extract_receipt_data(str(temp_img_path))
@@ -156,7 +162,7 @@ def handle_receipt_image(event: MessageEvent, user_id: str):
                 PushMessageRequest(to=user_id, messages=[flex_msg])
             )
     except Exception as e:
-        send_push_text(user_id, f"❌ อ่านใบเสร็จไม่สำเร็จ: {str(e)}")
+        send_push_text(user_id, f"อ่านใบเสร็จไม่สำเร็จ {str(e)}")
 
 # --- 2. จัดการเมื่อกดปุ่มบน Flex Message ---
 @handler.add(PostbackEvent)
@@ -170,13 +176,13 @@ def handle_postback(event: PostbackEvent):
         USER_MODES[user_id] = mode
         
         mode_names = {
-            "receipt": "🧾 บันทึกข้อมูลใบเสร็จ/บัญชี",
-            "invoice": "📄 ออกใบแจ้งหนี้ (Invoice)",
-            "quotation": "📋 ออกใบเสนอราคา (Quotation)",
-            "po": "🛍️ ออกใบสั่งซื้อ (PO)",
-            "tax_invoice": "🏷️ ใบกำกับภาษี / ใบเสร็จรับเงิน"
+            "receipt": "บันทึกข้อมูลใบเสร็จ/บัญชี",
+            "invoice": "ออกใบแจ้งหนี้ (Invoice)",
+            "quotation": "ออกใบเสนอราคา (Quotation)",
+            "po": "ออกใบสั่งซื้อ (PO)",
+            "tax_invoice": "ใบกำกับภาษี / ใบเสร็จรับเงิน"
         }
-        send_push_text(user_id, f"✅ เลือกโหมด: {mode_names.get(mode, mode)}\nคุณสามารถพิมพ์ข้อมูลสั่งทำรายการเข้ามาได้เลยครับ")
+        send_push_text(user_id, f"เลือกโหมด {mode_names.get(mode, mode)}\nคุณสามารถพิมพ์ข้อมูลสั่งทำรายการเข้ามาได้เลยค่ะ หรือส่งรูปใบเสร็จเพื่อบันทึกข้อมูล (เฉพาะโหมด บันทึกข้อมูลใบเสร็จฝบัญชี)")
         return
 
     if params.get("action") == "confirm":
@@ -189,8 +195,8 @@ def handle_postback(event: PostbackEvent):
                 excel_path=str(config.EXCEL_PATH),
                 source_file=pending["source_file"]
             )
-            reply_text = "✅ บันทึกข้อมูลลงไฟล์ Excel เรียบร้อยแล้วครับ!"
+            reply_text = "บันทึกข้อมูลลงไฟล์ Excel เรียบร้อยแล้วค่ะ"
         else:
-            reply_text = "⚠️ รายการนี้ถูกบันทึกไปแล้ว หรือรายการหมดอายุ"
+            reply_text = "รายการนี้ถูกบันทึกไปแล้ว หรือรายการหมดอายุ"
 
         send_push_text(user_id, reply_text)

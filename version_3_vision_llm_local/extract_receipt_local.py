@@ -148,7 +148,7 @@ def extract_receipt_data(image_path: str) -> dict:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("วิธีใช้: python extract_receipt_local.py path/to/receipt.jpg")
+        print("วิธีใช้ python extract_receipt_local.py path/to/receipt.jpg")
         sys.exit(1)
 
     path = sys.argv[1]
