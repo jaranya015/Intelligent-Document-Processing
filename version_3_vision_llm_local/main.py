@@ -23,6 +23,8 @@ from version_3_vision_llm_local.excel_writer import append_receipt_to_excel
 from version_3_vision_llm_local.line_flex import create_receipt_flex, create_menu_flex
 from version_3_vision_llm_local.document_generator import generate_document_image
 
+from fastapi.responses import FileResponse
+
 from datetime import datetime
 
 app = FastAPI()
@@ -44,6 +46,20 @@ USER_MODES = {}  # เก็บ State โหมดของผู้ใช้ {u
 
 # Mount ให้เข้าถึงไฟล์รูปภาพ static
 app.mount("/static", StaticFiles(directory=config.BASE_DIR / "static"), name="static")
+
+@app.get("/get-doc/{filename}")
+async def get_document(filename: str):
+    file_path = config.BASE_DIR / "static" / "generated_docs" / filename
+    if file_path.exists():
+        return FileResponse(
+            path=file_path, 
+            media_type="image/jpeg",
+            headers={
+                "ngrok-skip-browser-warning": "69420",  # บังคับข้ามหน้าเตือน ngrok ชัวร์ๆ
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+        )
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.post("/webhook")
 async def webhook(request: Request, background_tasks: BackgroundTasks):
@@ -100,16 +116,20 @@ def handle_message_event(event: MessageEvent):
                 # 2. บันทึกลง Excel
                 append_receipt_to_excel(doc_data, str(config.EXCEL_PATH), source_file=f"Generated_{current_mode}")
                 
-                # 3. สร้างรูปเอกสารจาก Template
+                # 3. สร้างรูปเอกสาร
                 template_file = f"{current_mode}_template.jpg"
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 out_file = f"{current_mode}_{timestamp}_{user_id[:6]}.jpg"
                 
                 generate_document_image(current_mode, doc_data, template_file, out_file)
                 
-                # 4. ส่งรูปภาพกลับให้ User
-                image_url = f"{config.NGROK_URL}/static/generated_docs/{out_file}?ngrok-skip-browser-warning=true"
-                img_msg = ImageMessage(original_content_url=image_url, preview_image_url=image_url)
+                # 4. สร้าง URL (ใช้ตัวแปร image_url ตัวเดียวกันทั้งสองช่อง)
+                image_url = f"{config.NGROK_URL}/get-doc/{out_file}?ngrok-skip-browser-warning=true"
+                
+                img_msg = ImageMessage(
+                    original_content_url=image_url, 
+                    preview_image_url=image_url
+                )
                 
                 with ApiClient(configuration) as api_client:
                     messaging_api = MessagingApi(api_client)
@@ -182,7 +202,7 @@ def handle_postback(event: PostbackEvent):
             "po": "ออกใบสั่งซื้อ (PO)",
             "tax_invoice": "ใบกำกับภาษี / ใบเสร็จรับเงิน"
         }
-        send_push_text(user_id, f"เลือกโหมด {mode_names.get(mode, mode)}\nคุณสามารถพิมพ์ข้อมูลสั่งทำรายการเข้ามาได้เลยค่ะ หรือส่งรูปใบเสร็จเพื่อบันทึกข้อมูล (เฉพาะโหมด บันทึกข้อมูลใบเสร็จฝบัญชี)")
+        send_push_text(user_id, f"เลือกโหมด {mode_names.get(mode, mode)}\nคุณสามารถพิมพ์ข้อมูลสั่งทำรายการเข้ามาได้เลยค่ะ หรือส่งรูปใบเสร็จเพื่อบันทึกข้อมูล (เฉพาะโหมด บันทึกข้อมูลใบเสร็จ/บัญชี)")
         return
 
     if params.get("action") == "confirm":
