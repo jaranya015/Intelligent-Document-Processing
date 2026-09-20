@@ -15,7 +15,7 @@ from linebot.v3.messaging import (
 from linebot.v3.webhooks import MessageEvent, ImageMessageContent, TextMessageContent, PostbackEvent
 
 from version_3_vision_llm_local import config
-from version_3_vision_llm_local.extract_receipt_local import (
+from version_3_vision_llm_local.extract_receipt import (
     extract_receipt_data,
     extract_text_to_json
 )
