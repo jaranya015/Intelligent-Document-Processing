@@ -218,5 +218,9 @@ def handle_postback(event: PostbackEvent):
             reply_text = "บันทึกข้อมูลลงไฟล์ Excel เรียบร้อยแล้วค่ะ"
         else:
             reply_text = "รายการนี้ถูกบันทึกไปแล้ว หรือรายการหมดอายุ"
+    elif params.get("action") == "cancel":
+        file_id = params.get("file_id")
+        PENDING_CONFIRMS.pop(file_id, None)  # เคลียร์ข้อมูลที่รอเซลฟ์ทิ้งไป
+        send_push_text(user_id, "ยกเลิกการบันทึกรายการนี้เรียบร้อยแล้วค่ะ")
 
         send_push_text(user_id, reply_text)

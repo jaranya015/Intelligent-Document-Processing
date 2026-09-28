@@ -43,6 +43,15 @@ def create_receipt_flex(data: dict, temp_file_id: str) -> dict:
                 "contents": [
                     {
                         "type": "button",
+                        "style": "secondary",
+                        "action": {
+                            "type": "postback",
+                            "label": "❌ ไม่บันทึก",
+                            "data": f"action=cancel&file_id={temp_file_id}"
+                        }
+                    },
+                    {
+                        "type": "button",
                         "style": "primary",
                         "color": "#1DB446",
                         "action": {
