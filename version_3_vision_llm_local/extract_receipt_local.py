@@ -28,7 +28,7 @@ import sys
 import ollama
 from PIL import Image
 
-MODEL = "llava-phi3"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
+model="llama3.1"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
 # หมายเหตุ: moondream แม่นยำน้อยกว่าโมเดลใหญ่ โดยเฉพาะภาษาไทยและตัวเลขละเอียด
 # ถ้าเครื่องมี RAM มากกว่านี้ (16GB+) ค่อยลองสลับกลับไปเป็น "qwen2.5vl" เพื่อความแม่นยำที่ดีกว่า
 
@@ -69,23 +69,23 @@ def extract_text_to_json(user_text: str) -> dict:
 โปรดอ่านข้อความต่อไปนี้แล้วสกัดข้อมูลออกมาเป็น JSON (ตอบเฉพาะ JSON เท่านั้น ห้ามใส่คำอธิบายเพิ่มเติม):
 "{user_text}"
 
-โครงสร้าง JSON ที่ต้องการ:
+โครงสร้าง JSON ที่ต้องการ (ให้สกัดข้อมูลจากข้อความเท่านั้น ถ้าข้อมูลไหนไม่มีให้ใส่ null):
 {{
-  "customer_name": "ชื่อลูกค้า หรือ ชื่อร้านค้า (ถ้าไม่มีใส่ null)",
-  "customer_address": "ที่อยู่ลูกค้า (ถ้าไม่มีใส่ null)",
-  "customer_tax_id": "เลขผู้เสียภาษีลูกค้า (ถ้าไม่มีใส่ null)",
-  "customer_phone": "เบอร์โทรศัพท์ลูกค้า (ถ้าไม่มีใส่ null)",
-  "customer_email": "อีเมลลูกค้า (ถ้าไม่มีใส่ null)",
-  "customer_contact": "ชื่อผู้ติดต่อ (ถ้าไม่มีใส่ null)",
-  "item_name": "ชื่อสินค้า/บริการ (เช่น หมู)",
-  "qty": 1,
-  "unit_price": 500.0,
-  "amount": 500.0,
-  "credit_term": "15"
+  "customer_name": "ชื่อลูกค้า หรือ ชื่อร้านค้า",
+  "customer_address": "ที่อยู่ลูกค้า",
+  "customer_tax_id": "เลขผู้เสียภาษีลูกค้า",
+  "customer_phone": "เบอร์โทรศัพท์ลูกค้า",
+  "customer_email": "อีเมลลูกค้า",
+  "customer_contact": "ชื่อผู้ติดต่อ",
+  "item_name": "ชื่อสินค้าหรือบริการที่ลูกค้าสั่ง",
+  "qty": 0,
+  "unit_price": 0.0,
+  "amount": 0.0,
+  "credit_term": "จำนวนวันเครดิต"
 }}
 """
     response = ollama.chat(
-        model="llava-phi3",
+        model="llama3.1",
         messages=[{"role": "user", "content": prompt}],
         format="json"
     )

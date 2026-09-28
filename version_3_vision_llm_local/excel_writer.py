@@ -61,20 +61,25 @@ def append_receipt_to_excel(data: dict, excel_path: str, source_file: str = "") 
     """เพิ่มข้อมูลใบเสร็จ 1 รายการเป็นแถวใหม่ต่อท้ายไฟล์ Excel"""
     wb, ws = _ensure_workbook(excel_path)
 
+    # จัดรูปแบบรายการสินค้าให้รองรับทั้งแบบสแกนใบเสร็จและแบบสร้างบิล
+    items = data.get("items")
+    if not items and data.get("item_name"):
+        items = [{"name": data.get("item_name"), "qty": data.get("qty", 1), "amount": data.get("amount", 0)}]
+
     row = [
         datetime.now().isoformat(timespec="seconds"),
         source_file,
-        data.get("company"),
+        data.get("company") or data.get("customer_name"),      # ถ้าไม่มี company ให้ดึง customer_name แทน
         data.get("document_type"),
-        data.get("document_no"),
+        data.get("document_no") or data.get("doc_no"),         
         data.get("date"),
-        data.get("tax_id"),
-        _summarize_items(data.get("items")),
-        data.get("subtotal"),
+        data.get("tax_id") or data.get("customer_tax_id"),     
+        _summarize_items(items),                               # ใช้ items ที่จัดรูปแบบแล้ว
+        data.get("subtotal") or data.get("amount"),
         data.get("discount"),
         data.get("vat"),
-        data.get("total"),
-        data.get("currency"),
+        data.get("total") or data.get("amount"),
+        data.get("currency") or "THB",
         ", ".join(data.get("low_confidence_fields") or []),
     ]
     ws.append(row)
