@@ -1,6 +1,12 @@
 def create_receipt_flex(data: dict, temp_file_id: str) -> dict:
     company = data.get("company") or "ไม่ระบุร้านค้า"
-    total_val = data.get("total") or 0.0
+    
+    # --- บังคับแปลงค่า total ให้เป็นตัวเลข (float) เสมอ ป้องกัน Error ---
+    try:
+        total_val = float(data.get("total") or 0.0)
+    except (ValueError, TypeError):
+        total_val = 0.0
+        
     currency = data.get("currency") or "THB"
     total_str = f"{total_val:,.2f} {currency}"
     date = data.get("date") or "ไม่ระบุวันที่"
@@ -9,7 +15,6 @@ def create_receipt_flex(data: dict, temp_file_id: str) -> dict:
 
     status_text = f"จุดที่อ่านไม่ชัด: {', '.join(low_conf)}" if low_conf else "อ่านข้อมูลครบถ้วน"
     status_color = "#E63946" if low_conf else "#2A9D8F"
-
     return {
         "type": "flex",
         "altText": f"ตรวจสอบใบเสร็จ {company} ยอด {total_str}",
@@ -84,10 +89,10 @@ def create_menu_flex() -> dict:
                 "spacing": "sm",
                 "contents": [
                     {"type": "text", "text": "กรุณาเลือกรายการที่ต้องการทำ", "size": "sm", "color": "#666666", "margin": "xs"},
-                    {
-                        "type": "button", "style": "primary", "color": "#2A9D8F", "height": "sm",
-                        "action": {"type": "postback", "label": "บันทึกใบเสร็จ / บิลซื้อ", "data": "mode=receipt"}
-                    },
+ #                   {
+ #                       "type": "button", "style": "primary", "color": "#2A9D8F", "height": "sm",
+ #                       "action": {"type": "postback", "label": "บันทึกใบเสร็จ / บิลซื้อ", "data": "mode=receipt"}
+#                    },
                     {
                         "type": "button", "style": "primary", "color": "#F4A261", "height": "sm",
                         "action": {"type": "postback", "label": "ออกใบเสนอราคา (Quotation)", "data": "mode=quotation"}
