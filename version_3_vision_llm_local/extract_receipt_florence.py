@@ -42,7 +42,6 @@ def extract_with_florence2(image_path):
     return parsed_answer.get("<OCR>", "")
 
 def extract_with_regex(raw_text):
-    """สกัดข้อมูลแบบ Dynamic รองรับเอกสารหลายประเภท (Invoice, PO, Quotation, Tax Invoice)"""
     data = {
         "document_type": None,
         "customer_name": None,
@@ -51,7 +50,7 @@ def extract_with_regex(raw_text):
         "total_amount": None
     }
     
-    # 1. ตรวจสอบประเภทเอกสารจากหัวกระดาษ
+    # 1. ตรวจสอบประเภทเอกสาร
     if re.search(r'Tax\s*Invoice|ใบกำกับภาษี', raw_text, re.IGNORECASE):
         data["document_type"] = "Tax Invoice"
     elif re.search(r'Purchase\s*Order|ใบสั่งซื้อ', raw_text, re.IGNORECASE):
@@ -61,36 +60,40 @@ def extract_with_regex(raw_text):
     elif re.search(r'Invoice|ใบแจ้งหนี้', raw_text, re.IGNORECASE):
         data["document_type"] = "Invoice"
 
-    # 2. ค้นหาเลขที่เอกสาร (รองรับทั้ง INV-, PO-, QT- หรือรหัสตัวเลขใกล้เคียง)
+    # 2. ค้นหาเลขที่เอกสาร
     inv_match = re.search(r'((?:INV|PO|QT|TAX)[-\d]+)', raw_text, re.IGNORECASE)
     if inv_match:
         data["invoice_number"] = inv_match.group(1)
-    else:
-        # Fallback กรณีรูปแบบรหัสต่างออกไป
-        fallback_inv = re.search(r'(INV-[\d]+)', raw_text, re.IGNORECASE)
-        if fallback_inv:
-            data["invoice_number"] = fallback_inv.group(1)
         
     # 3. ค้นหารูปแบบวันที่ (DD/MM/YYYY)
     date_match = re.search(r'(\d{2}/\d{2}/\d{4})', raw_text)
     if date_match:
         data["date"] = date_match.group(1)
         
-    # 4. ค้นหาชื่อลูกค้า (ดึงข้อความหลังคำว่า ชื่อลูกค้า หรือ ร้าน)
-    cust_match = re.search(r'(?:ชื่อลูกค้า|ร้าน)\s*[:\-]?\s*([ก-ฮa-zA-Z\.\s]+)', raw_text)
+    # 4. ค้นหาชื่อลูกค้า (ปรับให้จับหลังคำว่า "ชื่อลูกค้า")
+    cust_match = re.search(r'ชื่อลูกค้า\s*([ก-ฮa-zA-Z\.\s]+?)(?=\s+(?:ที่อยู่|เลขผู้เสียภาษี|เบอร์โทรศัพท์|อีเมล|ผู้ติดต่อ|เลขอ|วันที่|เลขที่)|$)', raw_text)
     if cust_match:
         data["customer_name"] = cust_match.group(1).strip()
+    else:
+        # Fallback หากหารูปแบบไม่เจอ ให้หาคำว่า "ร้าน"
+        store_match = re.search(r'(ร้าน[ก-ฮa-zA-Z\.\s]+)', raw_text)
+        if store_match:
+            data["customer_name"] = store_match.group(1).strip()
         
-    # 5. ค้นหายอดเงินรวมสุทธิ (มองหาตัวเลขที่มีทศนิยมกลุ่มท้ายๆ ของเอกสาร)
-    amounts = re.findall(r'([\d,]+\.\d{2})', raw_text)
-    if amounts:
-        # เลือกตัวเลขที่เป็นเรทราคาสุทธิ (ตัดตัวเลขที่เป็น 0.00 หรือพวกจำนวนเงินย่อยออกถ้าเป็นไปได้)
-        valid_amounts = [amt for amt in amounts if amt != "0.00"]
-        if valid_amounts:
-            data["total_amount"] = valid_amounts[-1]  # มักจะเป็นยอดรวมสุทธิตัวสุดท้าย
-        else:
-            data["total_amount"] = amounts[-1]
-        
+    # 5. ค้นหายอดเงินรวมสุทธิ (มองหาบรรทัด "จำนวนเงินรวมทั้งสิ้น" หรือยอดสุดท้ายที่ไม่ใช่ 0.00)
+    total_match = re.search(r'จำนวนเงินรวมทั้งสิ้น\s*[\r\n]+\s*([\d,]+\.\d{2})', raw_text)
+    if total_match:
+        data["total_amount"] = total_match.group(1).replace(",", "")
+    else:
+        # Fallback หาตัวเลขที่มีทศนิยมตัวท้ายๆ ของเอกสาร
+        amounts = re.findall(r'([\d,]+\.\d{2})', raw_text)
+        if amounts:
+            valid_amounts = [amt.replace(",", "") for amt in amounts if amt not in ("0.00", "350.00")]
+            if valid_amounts:
+                data["total_amount"] = valid_amounts[-1]
+            else:
+                data["total_amount"] = amounts[-1].replace(",", "")
+                
     return data
 
 

@@ -14,14 +14,14 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, ImageMessageContent, TextMessageContent, PostbackEvent
 
-from version_3_vision_llm_local import config
-from version_3_vision_llm_local.extract_receipt import (
+import config
+from extract_receipt import (
     extract_receipt_data,
     extract_text_to_json
 )
-from version_3_vision_llm_local.excel_writer import append_receipt_to_excel
-from version_3_vision_llm_local.line_flex import create_receipt_flex, create_menu_flex
-from version_3_vision_llm_local.document_generator import generate_document_image
+from excel_writer import append_receipt_to_excel
+from line_flex import create_receipt_flex, create_menu_flex
+from document_generator import generate_document_image
 
 from fastapi.responses import FileResponse
 
@@ -205,6 +205,7 @@ def handle_postback(event: PostbackEvent):
         send_push_text(user_id, f"เลือกโหมด {mode_names.get(mode, mode)}\nคุณสามารถพิมพ์ข้อมูลสั่งทำรายการเข้ามาได้เลยค่ะ หรือส่งรูปใบเสร็จเพื่อบันทึกข้อมูล (เฉพาะโหมด บันทึกข้อมูลใบเสร็จ/บัญชี)")
         return
 
+    # จัดการปุ่มยืนยันการบันทึก
     if params.get("action") == "confirm":
         file_id = params.get("file_id")
         pending = PENDING_CONFIRMS.pop(file_id, None)
@@ -218,9 +219,11 @@ def handle_postback(event: PostbackEvent):
             reply_text = "บันทึกข้อมูลลงไฟล์ Excel เรียบร้อยแล้วค่ะ"
         else:
             reply_text = "รายการนี้ถูกบันทึกไปแล้ว หรือรายการหมดอายุ"
+            
+        send_push_text(user_id, reply_text)
+
+    # จัดการปุ่มยกเลิก
     elif params.get("action") == "cancel":
         file_id = params.get("file_id")
-        PENDING_CONFIRMS.pop(file_id, None)  # เคลียร์ข้อมูลที่รอเซลฟ์ทิ้งไป
+        PENDING_CONFIRMS.pop(file_id, None)  # เคลียร์ข้อมูลที่รอคอนเฟิร์มทิ้งไป
         send_push_text(user_id, "ยกเลิกการบันทึกรายการนี้เรียบร้อยแล้วค่ะ")
-
-        send_push_text(user_id, reply_text)
