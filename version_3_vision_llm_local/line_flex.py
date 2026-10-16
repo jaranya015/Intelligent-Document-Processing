@@ -89,10 +89,10 @@ def create_menu_flex() -> dict:
                 "spacing": "sm",
                 "contents": [
                     {"type": "text", "text": "กรุณาเลือกรายการที่ต้องการทำ", "size": "sm", "color": "#666666", "margin": "xs"},
- #                   {
- #                       "type": "button", "style": "primary", "color": "#2A9D8F", "height": "sm",
- #                       "action": {"type": "postback", "label": "บันทึกใบเสร็จ / บิลซื้อ", "data": "mode=receipt"}
-#                    },
+                    {
+                        "type": "button", "style": "primary", "color": "#2A9D8F", "height": "sm",
+                        "action": {"type": "postback", "label": "บันทึกใบเสร็จ / บิลซื้อ", "data": "mode=receipt"}
+                    },
                     {
                         "type": "button", "style": "primary", "color": "#F4A261", "height": "sm",
                         "action": {"type": "postback", "label": "ออกใบเสนอราคา (Quotation)", "data": "mode=quotation"}

@@ -24,10 +24,14 @@ import io
 import json
 import os
 import sys
-
+import cv2
+import numpy as np
+import pytesseract
+import re
 import ollama
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 MODEL = "minicpm-v"
 #MODEL = "llava-phi3"  #เพื่อให้ฟังก์ชันอ่านใบเสร็จรู้ว่าจะต้องใช้โมเดลตัวไหน
 model="llama3.1"  # moondream เล็ก (~1.8GB) เหมาะกับเครื่อง RAM 8GB - เร็วกว่า qwen2.5vl/llama3.2-vision มาก
@@ -147,7 +151,65 @@ def extract_receipt_data(image_path: str) -> dict:
 
     return data
 
+def preprocess_image(image_path):
+    # 1. โหลดภาพแบบ Grayscale (ภาพขาวดำ)
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    
+    # 2. ปรับความคมชัดและลดสัญญาณรบกวน (Denoising)
+    denoised = cv2.fastNlMeansDenoising(img, h=30)
+    
+    # 3. ทำ Thresholding (Adaptive Threshold) เพื่อให้ตัวหนังสือตัดกับพื้นหลังชัดเจน
+    # ช่วยแก้ปัญหาใบเสร็จที่แสงเงาไม่สม่ำเสมอ
+    thresh = cv2.adaptiveThreshold(
+        denoised, 255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        cv2.THRESH_BINARY, 11, 2
+    )
+    
+    # (ทางเลือก) บันทึกภาพที่ปรับปรุงแล้วเพื่อตรวจสอบ
+    processed_path = "processed_receipt.jpg"
+    cv2.imwrite(processed_path, thresh)
+    
+    return processed_path
 
+def extract_text_local(image_path):
+    # 1. ทำ Image Preprocessing ก่อน
+    processed_image_path = preprocess_image(image_path)
+    
+    # 2. นำภาพที่ผ่านการคลีนแล้วไปทำ OCR (ตัวอย่างการใช้ Tesseract รองรับไทย+อังกฤษ)
+    processed_img = cv2.imread(processed_image_path)
+    custom_config = r'--oem 3 --psm 6 -l tha+eng'
+    raw_text = pytesseract.image_to_string(processed_img, config=custom_config)
+    
+    return raw_text
+
+def extract_with_regex(raw_text):
+    # ค้นหารูปแบบวันที่ เช่น DD/MM/YYYY หรือ DD-MM-YYYY
+    date_pattern = r'\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b'
+    dates = re.findall(date_pattern, raw_text)
+    
+    # ค้นหารูปแบบจำนวนเงิน (เช่น ยอดรวม, Total, ฿)
+    price_pattern = r'(?:รวมทั้งสิ้น|รวมเงิน|Total|NET)?\s*[:]?\s*([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})'
+    prices = re.findall(price_pattern, raw_text)
+    
+    return {
+        "extracted_dates": dates,
+        "extracted_prices": prices
+    }
+
+
+    
+if __name__ == "__main__":
+    test_image_path = "invoice_template.jpg"  
+    
+    if os.path.exists(test_image_path):
+        print("--- เริ่มทดสอบ Vision Model ผ่าน Ollama ---")
+        # เปลี่ยนมาเรียกฟังก์ชันดึงข้อมูลด้วย Vision LLM แทน Tesseract OCR
+        result = extract_receipt_data(test_image_path)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(f"ไม่พบไฟล์รูปภาพสำหรับทดสอบ: {test_image_path}")
+'''
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("วิธีใช้ python extract_receipt_local.py path/to/receipt.jpg")
@@ -161,6 +223,6 @@ if __name__ == "__main__":
     result = extract_receipt_data(path)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
-
+'''
 
     
