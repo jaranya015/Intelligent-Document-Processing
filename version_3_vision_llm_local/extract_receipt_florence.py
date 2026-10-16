@@ -95,15 +95,20 @@ def extract_with_regex(raw_text):
 
 
 if __name__ == "__main__":
-    test_image = "invoice_template.jpg"
-    print(f"--- เริ่มประมวลผลภาพ {test_image} ด้วย Hybrid Pipeline (Florence-2 + Regex) ---")
+    original_image = "invoice_template.jpg"
+    processed_image_path = "processed_receipt.jpg"
     
-    # 1. ดึงข้อความดิบด้วย Local OCR
-    raw_text = extract_with_florence2(test_image)
+    print(f"--- เริ่มกระบวนการ Preprocessing ภาพด้วย OpenCV ---")
+    # สมมติว่ามีฟังก์ชัน preprocess หรือเราใช้ภาพที่คลีนแล้วมาเทส
+    # ถ้ายังไม่มีฟังก์ชันเรียก OpenCV ในไฟล์นี้ สามารถใช้ภาพต้นฉบับผ่าน Preprocess ได้เลย
+    
+    print(f"--- เริ่มประมวลผลภาพผ่าน Hybrid Pipeline (Florence-2 + Regex) ---")
+    
+    # ส่งภาพเข้าโมเดล Local
+    raw_text = extract_with_florence2(original_image)
     print("\n[1] ข้อความดิบที่อ่านได้จาก OCR:")
     print(raw_text)
     
-    # 2. สกัดข้อมูลด้วย Regex
     structured_data = extract_with_regex(raw_text)
-    print("\n[2] ข้อมูลที่สกัดได้โครงสร้าง JSON สวยๆ:")
+    print("\n[2] ข้อมูลที่สกัดได้โครงสร้าง JSON ")
     print(json.dumps(structured_data, ensure_ascii=False, indent=2))
